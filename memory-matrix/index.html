@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Matrix - 数字记忆挑战</title>
+    <style>
+        :root {
+            --bg-color: #2c3e50;
+            --tile-color: #34495e;
+            --highlight-color: #00d2d3;
+            --error-color: #ff6b6b;
+            --text-color: #ecf0f1;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #game-info { margin-bottom: 20px; text-align: center; }
+
+        /* 动态网格布局 */
+        #grid {
+            display: grid;
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .tile {
+            width: 80px;
+            height: 80px;
+            background-color: var(--tile-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .tile:active { transform: scale(0.95); }
+
+        /* 高亮样式 */
+        .tile.active { background-color: var(--highlight-color); }
+        .tile.error { background-color: var(--error-color); }
+
+        #msg { height: 30px; margin-top: 20px; font-weight: bold; color: var(--highlight-color); }
+        
+        button {
+            padding: 10px 25px;
+            font-size: 18px;
+            background: var(--highlight-color);
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-info">
+        <h1>Memory Matrix</h1>
+        <p>等级: <span id="level-val">1</span> | 记忆数量: <span id="count-val">3</span></p>
+    </div>
+
+    <div id="grid"></div>
+    <div id="msg">点击“开始游戏”记忆闪烁顺序</div>
+    <button id="start-btn">开始游戏</button>
+
+    <script>
+        let level = 1;
+        let sequence = [];
+        let playerSequence = [];
+        let isShowing = false;
+
+        const grid = document.getElementById('grid');
+        const startBtn = document.getElementById('start-btn');
+        const msg = document.getElementById('msg');
+
+        function initGame() {
+            const gridSize = Math.min(Math.floor(level / 3) + 3, 6); // 最大 6x6
+            const totalTiles = gridSize * gridSize;
+            const tileCount = Math.min(level + 2, totalTiles);
+            
+            // 更新 UI
+            document.getElementById('level-val').innerText = level;
+            document.getElementById('count-val').innerText = tileCount;
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            grid.innerHTML = '';
+            
+            // 创建方格
+            for (let i = 0; i < totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.id = i;
+                tile.onclick = () => handleTileClick(i, tile);
+                grid.appendChild(tile);
+            }
+
+            generateSequence(totalTiles, tileCount);
+        }
+
+        function generateSequence(totalTiles, count) {
+            sequence = [];
+            let available = Array.from({length: totalTiles}, (_, i) => i);
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * available.length);
+                sequence.push(available.splice(randomIndex, 1)[0]);
+            }
+        }
+
+        async function showSequence() {
+            isShowing = true;
+            startBtn.disabled = true;
+            msg.innerText = "观察顺序...";
+            playerSequence = [];
+
+            for (let id of sequence) {
+                const tile = document.querySelector(`.tile[data-id='${id}']`);
+                await wait(500);
+                if (tile) {
+                    tile.classList.add('active');
+                    await wait(600);
+                    tile.classList.remove('active');
+                }
+            }
+
+            isShowing = false;
+            msg.innerText = "请按顺序点击！";
+        }
+
+        function handleTileClick(id, tile) {
+            if (isShowing || sequence.length === 0) return;
+
+            const expectedId = sequence[playerSequence.length];
+            
+            if (id === expectedId) {
+                tile.classList.add('active');
+                playerSequence.push(id);
+                // 延迟移除高亮，让点击有反馈
+                setTimeout(() => tile.classList.remove('active'), 300);
+
+                if (playerSequence.length === sequence.length) {
+                    msg.innerText = "太棒了！准备进入下一关...";
+                    level++;
+                    // 自动进入下一关：初始化并播放新序列
+                    setTimeout(() => {
+                        initGame();
+                        showSequence();
+                    }, 800);
+                }
+            } else {
+                tile.classList.add('error');
+                msg.innerText = "顺序错误！游戏重置。";
+                level = 1;
+                sequence = [];
+                startBtn.disabled = false;
+                setTimeout(() => {
+                    tile.classList.remove('error');
+                    initGame();
+                }, 1000);
+            }
+        }
+
+        function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        startBtn.onclick = () => {
+            initGame();
+            showSequence();
+        };
+
+        // 初始化显示
+        initGame();
+    </script>
+</body>
+</html>

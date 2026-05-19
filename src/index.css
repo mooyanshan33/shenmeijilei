@@ -1,0 +1,221 @@
+@import url('https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.loli.net/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core tokens (match index.html spec) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+    --primary: 0 0% 12%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 97%;
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 12%;
+    --destructive: 0 0% 20%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 92%;
+    --ring: 0 0% 70%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 12%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 220 9% 65%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 0% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    transition: background-color 240ms cubic-bezier(0.2, 0.9, 0.2, 1), color 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    /* iOS-like sticky surface:干净、克制、轻层级 */
+    @apply backdrop-blur-xl bg-background/85 border-b border-border/60;
+  }
+  
+  .glass-card {
+    /* Card: 白底 + 极细边框（不用阴影） */
+    @apply bg-card rounded-lg border border-border/70 shadow-none;
+  }
+  
+  .ripple {
+    @apply absolute rounded-full bg-gradient-to-r from-teal-100 to-transparent pointer-events-none;
+    animation: ripple 3s ease-out infinite;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Material Symbols */
+  .material-symbols {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .material-symbols-filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .btn-press {
+    @apply active:scale-[0.99] transition-transform duration-220 ease-kimi;
+  }
+  
+  .btn-press:active {
+    @apply scale-95;
+  }
+  
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-[transform] duration-220 ease-kimi;
+  }
+  
+  .card-hover:hover {
+    @apply -translate-y-[1px];
+  }
+  
+  /* Page transition */
+  .page-transition {
+    @apply transition-all duration-240 ease-kimi;
+  }
+
+  .section-title {
+    @apply flex items-center justify-between mb-3;
+  }
+
+  .section-kicker {
+    @apply inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-muted-foreground/80;
+  }
+
+  .soft-divider {
+    @apply h-px flex-1 bg-border/70;
+  }
+  
+  /* Timeline */
+  .timeline-line {
+    @apply w-0.5 bg-border absolute left-4 top-0;
+  }
+  
+  .timeline-dot {
+    @apply w-3 h-3 rounded-full bg-foreground absolute left-3.5 -translate-x-1/2 border-2 border-background;
+  }
+}
+
+@layer utilities {
+  /* Animation delays */
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+  .animation-delay-600 { animation-delay: 600ms; }
+  .animation-delay-700 { animation-delay: 700ms; }
+  .animation-delay-800 { animation-delay: 800ms; }
+  
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-none text-foreground;
+  }
+  
+  /* Safe area for mobile */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Phone Container Styles */
+.phone-container {
+  transition: all 0.3s ease;
+  background: hsl(var(--background));
+}
+
+/* Desktop: Show phone frame */
+@media (min-width: 640px) {
+  .phone-container {
+    box-shadow: none;
+  }
+}
+
+/* Mobile: Full screen */
+@media (max-width: 639px) {
+  .phone-container {
+    border-radius: 0 !important;
+    border: none !important;
+    height: 100vh !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

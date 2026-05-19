@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>审美积累</title>
+    <style>
+      @font-face {
+        font-family: "ICVE";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/ICVE.ttf") format("truetype");
+      }
+
+      :root {
+        --c-white: #ffffff;
+        --c-gray-50: #f7f7f7;
+        --c-gray-100: #f5f5f5;
+        --c-gray-200: #e5e5e5;
+        --c-gray-300: #d4d4d4;
+        --c-gray-400: #a3a3a3;
+        --c-gray-500: #737373;
+        --c-gray-600: #525252;
+
+        --font-sans: "ICVE", -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "Helvetica Neue", sans-serif;
+
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+
+        --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+        --duration: 220ms;
+      }
+
+      #bg-pattern {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-color: var(--c-white);
+        background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http%3A//www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%3E%3Cg%20stroke='black'%20stroke-opacity='0.04'%20stroke-width='0.5'%3E%3Cline%20x1='0'%20y1='6'%20x2='24'%20y2='6'/%3E%3Cline%20x1='0'%20y1='9'%20x2='24'%20y2='9'/%3E%3Cline%20x1='0'%20y1='12'%20x2='24'%20y2='12'/%3E%3Cline%20x1='0'%20y1='15'%20x2='24'%20y2='15'/%3E%3Cline%20x1='0'%20y1='18'%20x2='24'%20y2='18'/%3E%3C/g%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 24px 24px;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: none;
+        will-change: transform;
+      }
+
+      #boot-skeleton {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .boot-bar {
+        background: var(--c-gray-100);
+      }
+
+      .boot-content {
+        flex: 1;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .boot-line {
+        height: 16px;
+        border-radius: 4px;
+        background: var(--c-gray-200);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bg-pattern" aria-hidden="true"></div>
+    <div id="root">
+      <div id="boot-skeleton" aria-hidden="true">
+        <div class="boot-bar" style="height: 44px"></div>
+        <div class="boot-content">
+          <div class="boot-line"></div>
+          <div class="boot-line"></div>
+          <div class="boot-line" style="width: 72%"></div>
+        </div>
+        <div class="boot-bar" style="height: 83px"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

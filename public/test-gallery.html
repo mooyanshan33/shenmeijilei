@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>图库 URL 测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    .image-card {
+      display: inline-block;
+      width: 200px;
+      margin: 10px;
+      vertical-align: top;
+    }
+    .image-container {
+      width: 200px;
+      height: 150px;
+      background: #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .image-info {
+      margin-top: 8px;
+    }
+    .image-name {
+      font-size: 0.9em;
+      font-weight: 500;
+      color: #333;
+    }
+    .image-url {
+      font-size: 0.75em;
+      color: #666;
+      word-break: break-all;
+      margin-top: 4px;
+    }
+    .status-success {
+      color: #22c55e;
+      font-weight: 600;
+    }
+    .status-error {
+      color: #ef4444;
+      font-weight: 600;
+    }
+    .url-list {
+      font-family: monospace;
+      font-size: 0.85em;
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🖼️ 图库 URL 测试</h1>
+  
+  <div class="section">
+    <div class="section-title">📋 说明</div>
+    <p>此页面用于测试 Supabase Storage 中的图片是否可以正常访问。</p>
+    <p><strong>注意：</strong>请确保已在 Supabase 中创建了 "gallery" bucket 并上传了所有图片！</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎨 美学类型图片</div>
+    <div id="aesthetic-images"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎭 颜色主题图片</div>
+    <div id="color-theme-images"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔗 所有图片 URL 列表</div>
+    <div id="url-list" class="url-list"></div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://tefbzxcdrlepzhgjfpdq.supabase.co';
+    const bucket = 'gallery';
+
+    const images = [
+      { file: '赛博朋克1.png', category: 'aesthetics/cyberpunk', tags: ['赛博朋克', '霓虹', '夜景'] },
+      { file: '赛博朋克2.png', category: 'aesthetics/cyberpunk', tags: ['赛博朋克', '未来', '城市'] },
+      { file: '抹茶.jpg', category: 'color-themes/matcha', tags: ['抹茶', '绿色', '清新'] },
+      { file: '浅灰-灰.png', category: 'color-themes/light-gray', tags: ['浅灰', '灰色', '简约'] },
+      { file: '浅灰-粉.jpg', category: 'color-themes/light-pink', tags: ['浅灰', '粉色', '柔和'] },
+      { file: '浅灰-黑.png', category: 'color-themes/light-black', tags: ['浅灰', '黑色', '高级'] },
+      { file: '海盐.png', category: 'color-themes/sea-salt', tags: ['海盐', '蓝色', '清新'] },
+      { file: '燕麦.png', category: 'color-themes/oat', tags: ['燕麦', '米色', '温暖'] },
+      { file: '黑-浅灰.png', category: 'color-themes/dark-light-gray', tags: ['黑色', '浅灰', '对比'] },
+      { file: '黑粉.jpg', category: 'color-themes/dark-pink', tags: ['黑色', '粉色', '时尚'] },
+    ];
+
+    function getUrl(file, category) {
+      return `${supabaseUrl}/storage/v1/object/public/${bucket}/${category}/${file}`;
+    }
+
+    function createImageCard(img) {
+      const url = getUrl(img.file, img.category);
+      const card = document.createElement('div');
+      card.className = 'image-card';
+      
+      card.innerHTML = `
+        <div class="image-container">
+          <img src="${url}" alt="${img.file}" onerror="this.parentElement.innerHTML='<span class=\\'status-error\\'>加载失败</span>'" onload="this.parentElement.querySelector('.status')?.remove();">
+        </div>
+        <div class="image-info">
+          <div class="image-name">${img.file}</div>
+          <div class="image-url">${url}</div>
+        </div>
+      `;
+      
+      return card;
+    }
+
+    function renderImages() {
+      const aestheticContainer = document.getElementById('aesthetic-images');
+      const colorContainer = document.getElementById('color-theme-images');
+      const urlList = document.getElementById('url-list');
+      
+      const allUrls = [];
+      
+      images.forEach(img => {
+        const card = createImageCard(img);
+        const url = getUrl(img.file, img.category);
+        allUrls.push(url);
+        
+        if (img.category.startsWith('aesthetics')) {
+          aestheticContainer.appendChild(card);
+        } else {
+          colorContainer.appendChild(card);
+        }
+      });
+      
+      urlList.innerHTML = allUrls.map(url => `<div>${url}</div>`).join('');
+    }
+
+    renderImages();
+  </script>
+</body>
+</html>
