@@ -8,6 +8,12 @@ import { LogsPage } from '@/sections/LogsPage';
 import { ProfilePage } from '@/sections/ProfilePage';
 import { AuthCallback } from '@/sections/AuthCallback';
 import { useTheme } from '@/hooks/useTheme';
+import {
+  completeAuthFromUrl,
+  isAuthCallbackPath,
+  onAuthStateChange,
+  redirectToHomeAfterAuth,
+} from '@/supabase/services/auth';
 import type { TabType, AestheticType, ThemeType } from '@/types';
 
 type BrowseHistoryItem = { aesthetic: { id: string }; ts: number };
@@ -25,7 +31,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('explore');
   const [selectedAesthetic, setSelectedAesthetic] = useState<AestheticType | null>(null);
   const { theme, isInitialized, setLightTheme, setDarkTheme } = useTheme();
-  const isAuthCallback = typeof window !== 'undefined' && window.location.pathname.startsWith('/auth/callback');
+  const isAuthCallback = typeof window !== 'undefined' && isAuthCallbackPath();
 
   useEffect(() => {
     try {
@@ -35,6 +41,35 @@ function App() {
     } catch {
       void 0;
     }
+  }, []);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    const onRootWithTokens =
+      window.location.pathname === '/' &&
+      (hash.includes('access_token=') || hash.includes('token_hash='));
+
+    if (onRootWithTokens) {
+      void completeAuthFromUrl().then(() => {
+        redirectToHomeAfterAuth();
+      }).catch(() => {
+        window.history.replaceState({}, '', '/auth/callback' + window.location.search + window.location.hash);
+        window.location.replace('/auth/callback' + window.location.search + window.location.hash);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const { data: { subscription } } = onAuthStateChange((event) => {
+      if (
+        (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') &&
+        isAuthCallbackPath()
+      ) {
+        redirectToHomeAfterAuth();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSplashComplete = () => {

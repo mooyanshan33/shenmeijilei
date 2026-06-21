@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/supabase/client';
 import { Button } from '@/components/ui/button';
+import {
+  completeAuthFromUrl,
+  redirectToHomeAfterAuth,
+} from '@/supabase/services/auth';
 
 type Status = 'processing' | 'success' | 'error';
 
@@ -18,44 +21,25 @@ export function AuthCallback() {
     const url = new URL(window.location.href);
     const type = url.searchParams.get('type') ?? '';
     if (type === 'recovery') return 'recovery';
-    if (type === 'signup') return 'signup';
+    if (type === 'signup' || type === 'email') return 'signup';
     return 'unknown';
   }, []);
 
   useEffect(() => {
     let cancelled = false;
+
     async function run() {
       try {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-        } else if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) throw error;
-        } else {
-          const { data, error } = await supabase.auth.getSession();
-          if (error) throw error;
-          if (!data.session) {
-            throw new Error('链接无效或已过期，请返回应用后重新登录/注册');
-          }
-        }
+        await completeAuthFromUrl();
 
         if (cancelled) return;
         setStatus('success');
         setMessage(intent === 'recovery' ? '会话已恢复，即将返回…' : '验证成功，即将进入…');
 
-        window.history.replaceState({}, '', '/');
         window.setTimeout(() => {
-          window.location.replace('/');
+          if (!cancelled) {
+            redirectToHomeAfterAuth();
+          }
         }, 500);
       } catch (e) {
         if (cancelled) return;
@@ -63,6 +47,7 @@ export function AuthCallback() {
         setMessage(normalizeErrorMessage(e));
       }
     }
+
     void run();
     return () => {
       cancelled = true;
@@ -85,7 +70,7 @@ export function AuthCallback() {
           <div className="mt-6 flex gap-3">
             <Button
               className="flex-1 bg-[#535353] text-[#B9B9B9] hover:bg-[#535353] btn-press rounded-xl"
-              onClick={() => window.location.replace('/')}
+              onClick={() => redirectToHomeAfterAuth()}
             >
               返回应用
             </Button>

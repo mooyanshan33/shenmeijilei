@@ -117,7 +117,9 @@ export function EnhancedAuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     setError('');
     
     try {
-      await signInWithEmailOtp(email.trim());
+      await signInWithEmailOtp(email.trim(), {
+        shouldCreateUser: activeTab === 'signup',
+      });
       setMessage('验证码已发送到你的邮箱');
       setCountdown(60);
     } catch (err) {
