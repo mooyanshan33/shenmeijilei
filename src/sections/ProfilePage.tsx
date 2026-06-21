@@ -42,7 +42,6 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<ProfileView>('main');
-  const [userEmail, setUserEmail] = useState<string>('');
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
@@ -61,12 +60,10 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
         const user = await getCurrentUser();
         if (user) {
           setIsLoggedIn(true);
-          setUserEmail(user.email ?? '');
           const profileData = await getCurrentProfile(user.id);
           setProfile(profileData);
         } else {
           setIsLoggedIn(false);
-          setUserEmail('');
           setProfile({
             id: 'guest',
             name: '访客用户',
@@ -75,12 +72,12 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
             logCount: 0,
             contributionCount: 0,
             favoriteCount: 0,
+            favoriteAesthetics: [],
           });
         }
       } catch (error) {
         console.error('Failed to load profile:', error);
         setIsLoggedIn(false);
-        setUserEmail('');
         setProfile({
           id: 'guest',
           name: '访客用户',
@@ -89,6 +86,7 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
           logCount: 0,
           contributionCount: 0,
           favoriteCount: 0,
+          favoriteAesthetics: [],
         });
       } finally {
         setIsLoading(false);
@@ -325,13 +323,13 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                         <div className="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
                           <img
                             src={item.aesthetic.coverImage}
-                            alt={item.aesthetic.name}
+                            alt={item.aesthetic.nameCn}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                            {item.aesthetic.name}
+                            {item.aesthetic.nameCn}
                           </p>
                           <p className="text-sm text-zinc-500 truncate mt-0.5">
                             {item.aesthetic.nameEn}
@@ -387,12 +385,12 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
                         <img
                           src={item.aesthetic.coverImage}
-                          alt={item.aesthetic.name}
+                          alt={item.aesthetic.nameCn}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{item.aesthetic.name}</p>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{item.aesthetic.nameCn}</p>
                         <p className="text-xs text-zinc-500 truncate mt-0.5">{item.aesthetic.nameEn}</p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-zinc-400 flex-shrink-0" />

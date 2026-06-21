@@ -19,7 +19,6 @@ import { AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@/components/ui/avatar';
 import { MoreHorizontal, X, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { useAuth } from './useAuth';
 import { useComments } from './useComments';
 import { ReportDialog } from './ReportDialog';
@@ -30,7 +29,6 @@ interface CommentDrawerProps {
   onOpenChange: (open: boolean) => void;
   post: PostWithMeta;
   onReport: (data: { reason: string; post_id?: string; comment_id?: string }) => Promise<void>;
-  onDeleteComment: (commentId: string) => Promise<void>;
 }
 
 // 相对时间格式化
@@ -128,7 +126,6 @@ export function CommentDrawer({
   onOpenChange,
   post,
   onReport,
-  onDeleteComment
 }: CommentDrawerProps) {
   const { user, isAuthenticated } = useAuth();
   const { comments, isLoading, fetchComments, publishComment, deleteComment } = useComments(post.id);

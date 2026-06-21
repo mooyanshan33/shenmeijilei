@@ -37,7 +37,6 @@ export function PublishDrawer({
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,7 +94,6 @@ export function PublishDrawer({
       return;
     }
 
-    setIsUploading(true);
     try {
       let finalUrl = uploadedUrl;
       if (!finalUrl && imageFile) {
@@ -103,7 +101,7 @@ export function PublishDrawer({
       }
 
       await onSubmit({
-        imageUrl: finalUrl!,
+        image_url: finalUrl!,
         content: content.trim(),
         tags,
       });
@@ -118,8 +116,6 @@ export function PublishDrawer({
       onOpenChange(false);
     } catch (e) {
       console.error(e);
-    } finally {
-      setIsUploading(false);
     }
   }, [imageFile, uploadedUrl, content, tags, onUpload, onSubmit, onOpenChange]);
 

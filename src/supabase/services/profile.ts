@@ -24,6 +24,7 @@ export async function getProfileById(userId: string): Promise<UserProfile> {
     logCount: data.log_count ?? 0,
     contributionCount: data.contribution_count ?? 0,
     favoriteCount: data.favorite_count ?? 0,
+    favoriteAesthetics: [],
   };
 }
 
@@ -60,5 +61,6 @@ export async function updateProfile(
     logCount: data.log_count ?? 0,
     contributionCount: data.contribution_count ?? 0,
     favoriteCount: data.favorite_count ?? 0,
+    favoriteAesthetics: [],
   } as UserProfile;
 }

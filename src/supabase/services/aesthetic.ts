@@ -1,4 +1,12 @@
-import type { AestheticType, AestheticCategory, AestheticVideo } from '@/types';
+import type {
+  AestheticType,
+  AestheticCategory,
+  AestheticVideo,
+  ColorPalette,
+  RepresentativeArtist,
+  RepresentativeWork,
+  TimelineEntry,
+} from '@/types';
 import { supabase } from '@/supabase/client';
 import { mapSupabaseError } from '@/supabase/error';
 
@@ -9,16 +17,27 @@ const VIDEOS_TABLE = 'aesthetic_videos';
 function mapAestheticType(item: Record<string, unknown>): AestheticType {
   return {
     id: item.id as string,
-    name: item.name as string,
+    nameCn: (item.name_cn ?? item.name) as string,
     nameEn: item.name_en as string,
-    origin: item.origin as string,
-    era: item.era as string,
-    description: item.description as string,
-    features: item.features as string[],
     coverImage: item.cover_image as string,
-    gallery: item.gallery as string[],
-    relatedArtists: item.related_artists as string[],
-    tags: item.tags as string[],
+    galleryImages: (item.gallery_images ?? item.gallery ?? []) as string[],
+    summary: (item.summary ?? item.description ?? '') as string,
+    origin: (item.origin ?? '') as string,
+    history: (item.history ?? '') as string,
+    keyFeatures: (item.key_features ?? item.features ?? []) as string[],
+    colorPalette: (item.color_palette ?? []) as ColorPalette[],
+    keywords: (item.keywords ?? item.tags ?? []) as string[],
+    representativeArtists: (item.representative_artists ?? []) as RepresentativeArtist[],
+    representativeWorks: (item.representative_works ?? []) as RepresentativeWork[],
+    relatedAesthetics: (item.related_aesthetics ?? []) as string[],
+    timeline: (item.timeline ?? []) as TimelineEntry[],
+    popularityScore: (item.popularity_score ?? 0) as number,
+    communityPostsCount: (item.community_posts_count ?? 0) as number,
+    categoryId: (item.category_id ?? '') as string,
+    subcategoryId: item.subcategory_id as string | undefined,
+    moodTags: (item.mood_tags ?? []) as string[],
+    era: (item.era ?? '') as string,
+    region: (item.region ?? '') as string,
   };
 }
 
@@ -26,7 +45,9 @@ function mapAestheticCategory(item: Record<string, unknown>): AestheticCategory 
   return {
     id: item.id as string,
     name: item.name as string,
+    nameEn: (item.name_en ?? item.name) as string,
     icon: item.icon as string | undefined,
+    subcategories: [],
   };
 }
 
@@ -65,7 +86,7 @@ export async function searchAestheticTypes(query: string) {
   const { data, error } = await supabase
     .from(TYPES_TABLE)
     .select('*')
-    .or(`name.ilike.%${normalizedQuery}%,name_en.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%,tags.cs.{${normalizedQuery}}`);
+    .or(`name_cn.ilike.%${normalizedQuery}%,name_en.ilike.%${normalizedQuery}%,summary.ilike.%${normalizedQuery}%,keywords.cs.{${normalizedQuery}}`);
 
   if (error) {
     throw new Error(mapSupabaseError(error, '搜索审美类型失败'));

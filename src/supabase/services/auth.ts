@@ -86,7 +86,7 @@ export async function signUpWithPassword(
 }
 
 export async function signInWithEmailOtp(email: string) {
-  const { data, error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -117,7 +117,11 @@ export async function verifyOtp(email: string, token: string) {
   if (!data.session) {
     throw new Error('验证成功但未获取到会话');
   }
-  
+
+  if (!data.user) {
+    throw new Error('验证成功但未获取到用户信息');
+  }
+
   return {
     user: {
       id: data.user.id,

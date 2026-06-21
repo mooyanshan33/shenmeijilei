@@ -25,7 +25,7 @@ import { PublishDrawer } from './PublishDrawer';
 import { PostDetailModal } from './PostDetailModal';
 import { ReportDialog } from './ReportDialog';
 import { SAMPLE_POSTS, isSamplePostId, type SamplePost } from './samplePosts';
-import type { PostWithMeta } from './types';
+import type { PostWithMeta, PublishPostInput } from './types';
 
 // ─── Types & Mock Data ───────────────────────────────────────────
 
@@ -474,14 +474,10 @@ function WorkshopContent() {
     }
   };
 
-  const handlePublish = async (input: { imageUrl: string; content: string; tags: string[] }) => {
+  const handlePublish = async (input: PublishPostInput) => {
     setIsSubmitting(true);
     try {
-      await publishPost({
-        image_url: input.imageUrl,
-        content: input.content,
-        tags: input.tags,
-      });
+      await publishPost(input);
       toast.success('发布成功');
     } catch {
       toast.error('发布失败');
