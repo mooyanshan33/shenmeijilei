@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { AestheticCoverImage } from '@/components/AestheticCoverImage';
+import { resolveStorageImageUrl } from '@/lib/gallery';
 import { onOverlayTextClass } from '@/lib/overlayTone';
 import {
   getAllAesthetics,
@@ -361,9 +363,11 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
               </div>
               <button onClick={() => onSelectAesthetic(heroAesthetic)} className="group block w-full text-left">
                 <div className="relative aspect-[16/11] overflow-hidden rounded-[28px]">
-                  <img
+                  <AestheticCoverImage
                     src={heroAesthetic.coverImage}
                     alt={heroAesthetic.nameCn}
+                    label={heroAesthetic.nameCn}
+                    colorPalette={heroAesthetic.colorPalette}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className={heroOverlayClass} />
@@ -408,9 +412,11 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
                   className="overflow-hidden text-left glass-card card-hover group"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    <img
+                    <AestheticCoverImage
                       src={aesthetic.coverImage}
                       alt={aesthetic.nameCn}
+                      label={aesthetic.nameCn}
+                      colorPalette={aesthetic.colorPalette}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className={dailyOverlayClass} />
@@ -445,9 +451,11 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
                   className="flex shrink-0 items-center gap-2 rounded-full bg-white/55 px-4 py-2.5 text-sm text-foreground transition-all dark:bg-white/5 hover:bg-white/80"
                 >
                   <div className="h-6 w-6 rounded-full overflow-hidden">
-                    <img
+                    <AestheticCoverImage
                       src={aesthetic.coverImage}
                       alt={aesthetic.nameCn}
+                      label={aesthetic.nameCn}
+                      colorPalette={aesthetic.colorPalette}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -531,7 +539,15 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
               {communityShares.map((item) => (
                 <div key={item.id} className="w-72 flex-shrink-0 overflow-hidden glass-card">
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    <img src={item.imageUrl} alt={item.caption} className="h-full w-full object-cover" />
+                    <img
+                      src={resolveStorageImageUrl(item.imageUrl)}
+                      alt={item.caption}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                     <div className={communityOverlayClass} />
                     <div
                       className={`absolute bottom-3 right-3 rounded-full bg-white/18 px-2.5 py-1 text-xs backdrop-blur ${onCommunity}`}
@@ -599,9 +615,11 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
                 >
                   <div className="relative overflow-hidden rounded-[26px] glass-card card-hover">
                     <div className="relative aspect-[3/4] overflow-hidden">
-                      <img
+                      <AestheticCoverImage
                         src={aesthetic.coverImage}
                         alt={aesthetic.nameCn}
+                        label={aesthetic.nameCn}
+                        colorPalette={aesthetic.colorPalette}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className={archiveOverlayClass} />
@@ -671,9 +689,11 @@ export function ExplorePage({ onSelectAesthetic }: ExplorePageProps) {
                 >
                   <div className="relative overflow-hidden rounded-[26px] glass-card card-hover">
                     <div className="relative aspect-[3/4] overflow-hidden">
-                      <img
+                      <AestheticCoverImage
                         src={aesthetic.coverImage}
                         alt={aesthetic.nameCn}
+                        label={aesthetic.nameCn}
+                        colorPalette={aesthetic.colorPalette}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className={archiveOverlayClass} />

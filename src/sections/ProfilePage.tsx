@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { EnhancedAuthModal } from '@/components/auth';
+import { AestheticCoverImage } from '@/components/AestheticCoverImage';
 import { SettingsPage } from './SettingsPage';
 import { getCurrentUser, signOut } from '@/supabase/services/auth';
 import { getCurrentProfile, updateProfile } from '@/supabase/services/profile';
@@ -321,9 +322,11 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                         onClick={() => onSelectAesthetic(item.aesthetic)}
                       >
                         <div className="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
-                          <img
+                          <AestheticCoverImage
                             src={item.aesthetic.coverImage}
                             alt={item.aesthetic.nameCn}
+                            label={item.aesthetic.nameCn}
+                            colorPalette={item.aesthetic.colorPalette}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -383,9 +386,11 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                       onClick={() => onSelectAesthetic(item.aesthetic)}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
-                        <img
+                        <AestheticCoverImage
                           src={item.aesthetic.coverImage}
                           alt={item.aesthetic.nameCn}
+                          label={item.aesthetic.nameCn}
+                          colorPalette={item.aesthetic.colorPalette}
                           className="w-full h-full object-cover"
                         />
                       </div>

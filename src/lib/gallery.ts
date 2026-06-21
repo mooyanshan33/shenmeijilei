@@ -1,3 +1,5 @@
+import { supabase } from '@/supabase/client';
+
 export const GALLERY_BUCKET = 'gallery';
 const SUPABASE_PUBLIC_URL =
   import.meta.env.VITE_SUPABASE_URL ?? 'https://tefbzxcdrlepzhgjfpdq.supabase.co';
@@ -72,46 +74,67 @@ function resolveGalleryFileName(fileName: string) {
   return legacyFileNameMap[fileName] ?? fileName;
 }
 
+/** 通过 Supabase Storage API 生成公网 URL */
+export function getStoragePublicUrl(storagePath: string): string {
+  const normalized = storagePath.replace(/^\/+/, '');
+  const { data } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(normalized);
+  return data.publicUrl;
+}
+
+/** 将相对路径或 asset key 统一解析为完整公网 URL */
+export function resolveStorageImageUrl(input: string | null | undefined): string {
+  if (!input?.trim()) return '';
+
+  const value = input.trim();
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith('/storage/v1/object/public/')) {
+    return `${SUPABASE_PUBLIC_URL}${value}`;
+  }
+
+  if (value.startsWith(`${GALLERY_BUCKET}/`)) {
+    return getStoragePublicUrl(value.slice(GALLERY_BUCKET.length + 1));
+  }
+
+  return getStoragePublicUrl(value);
+}
+
+export function isManagedStorageUrl(url: string): boolean {
+  return /\/storage\/v1\/object\/public\/gallery\/managed\//i.test(url);
+}
+
 export function getGalleryImageUrl(fileName: string): string {
   const resolvedFileName = resolveGalleryFileName(fileName);
-  const image = galleryImages.find(img => img.fileName === resolvedFileName);
-  try {
-    if (image) {
-      return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${image.category}/${resolvedFileName}`;
-    }
-    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${resolvedFileName}`;
-  } catch (error) {
-    console.warn('获取 Storage URL 失败，返回 Supabase 默认地址:', error);
-    if (image) {
-      return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${image.category}/${resolvedFileName}`;
-    }
-    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${resolvedFileName}`;
+  const image = galleryImages.find((img) => img.fileName === resolvedFileName);
+
+  if (image) {
+    return getStoragePublicUrl(`${image.category}/${resolvedFileName}`);
   }
+
+  return getStoragePublicUrl(resolvedFileName);
 }
 
 export function getGalleryImagesByCategory(category: string): GalleryImage[] {
-  return galleryImages.filter(img => img.category.startsWith(category));
+  return galleryImages.filter((img) => img.category.startsWith(category));
 }
 
 export function getManagedImageUrl(assetKey: string): string {
-  return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/managed/${assetKey}`;
+  return getStoragePublicUrl(`managed/${assetKey}`);
 }
 
 export function getAestheticCoverUrl(aestheticId: string): string {
   const aestheticMap: Record<string, string> = {
     'wabi-sabi': 'aesthetics/wabi-sabi.jpg',
-    'minimalism': 'aesthetics/minimalism.jpg',
-    'cyberpunk': 'aesthetics/cyberpunk.jpg',
+    minimalism: 'aesthetics/minimalism.jpg',
+    cyberpunk: 'aesthetics/cyberpunk.jpg',
     'neo-chinese': 'aesthetics/neo-chinese.jpg',
     'pop-art': 'aesthetics/pop-art.jpg',
     'art-deco': 'aesthetics/art-deco.jpg',
   };
 
-  try {
-    const path = aestheticMap[aestheticId] || `aesthetics/${aestheticId}.jpg`;
-    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${path}`;
-  } catch {
-    const path = aestheticMap[aestheticId] || `aesthetics/${aestheticId}.jpg`;
-    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${path}`;
-  }
+  const path = aestheticMap[aestheticId] ?? `aesthetics/${aestheticId}.jpg`;
+  return getStoragePublicUrl(path);
 }

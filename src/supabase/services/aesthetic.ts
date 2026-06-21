@@ -9,6 +9,7 @@ import type {
 } from '@/types';
 import { supabase } from '@/supabase/client';
 import { mapSupabaseError } from '@/supabase/error';
+import { resolveStorageImageUrl } from '@/lib/gallery';
 
 const TYPES_TABLE = 'aesthetic_types';
 const CATEGORIES_TABLE = 'aesthetic_categories';
@@ -19,8 +20,8 @@ function mapAestheticType(item: Record<string, unknown>): AestheticType {
     id: item.id as string,
     nameCn: (item.name_cn ?? item.name) as string,
     nameEn: item.name_en as string,
-    coverImage: item.cover_image as string,
-    galleryImages: (item.gallery_images ?? item.gallery ?? []) as string[],
+    coverImage: resolveStorageImageUrl(item.cover_image as string),
+    galleryImages: ((item.gallery_images ?? item.gallery ?? []) as string[]).map(resolveStorageImageUrl),
     summary: (item.summary ?? item.description ?? '') as string,
     origin: (item.origin ?? '') as string,
     history: (item.history ?? '') as string,

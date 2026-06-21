@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AestheticCoverImage } from '@/components/AestheticCoverImage';
 import { getSimilarAesthetics } from '@/data/completeDatabase';
 import type { AestheticType } from '@/types';
 
@@ -111,7 +112,13 @@ export function AestheticDetail({ aesthetic, onClose }: AestheticDetailProps) {
 
       <div className="absolute inset-y-0 right-0 w-full overflow-hidden bg-background shadow-2xl">
         <div className="relative h-72 overflow-hidden">
-          <img src={aesthetic.coverImage} alt={aesthetic.nameCn} className="h-full w-full object-cover" />
+          <AestheticCoverImage
+            src={aesthetic.coverImage}
+            alt={aesthetic.nameCn}
+            label={aesthetic.nameCn}
+            colorPalette={aesthetic.colorPalette}
+            className="h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-black/20" />
 
           <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
