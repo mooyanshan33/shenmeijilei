@@ -1,4 +1,6 @@
 export const GALLERY_BUCKET = 'gallery';
+const SUPABASE_PUBLIC_URL =
+  import.meta.env.VITE_SUPABASE_URL ?? 'https://tefbzxcdrlepzhgjfpdq.supabase.co';
 
 export interface GalleryImage {
   fileName: string;
@@ -8,76 +10,108 @@ export interface GalleryImage {
 
 export const galleryImages: GalleryImage[] = [
   {
-    fileName: '赛博朋克1.png',
-    category: 'aesthetics/cyberpunk',
+    fileName: 'cyberpunk-1.png',
+    category: 'aesthetics',
     tags: ['赛博朋克', '霓虹', '夜景'],
   },
   {
-    fileName: '赛博朋克2.png',
-    category: 'aesthetics/cyberpunk',
+    fileName: 'cyberpunk-2.png',
+    category: 'aesthetics',
     tags: ['赛博朋克', '未来', '城市'],
   },
   {
-    fileName: '抹茶.jpg',
-    category: 'color-themes/matcha',
+    fileName: 'matcha.jpg',
+    category: 'color-themes',
     tags: ['抹茶', '绿色', '清新'],
   },
   {
-    fileName: '浅灰-灰.png',
-    category: 'color-themes/light-gray',
+    fileName: 'light-gray.png',
+    category: 'color-themes',
     tags: ['浅灰', '灰色', '简约'],
   },
   {
-    fileName: '浅灰-粉.jpg',
-    category: 'color-themes/light-pink',
+    fileName: 'light-pink.jpg',
+    category: 'color-themes',
     tags: ['浅灰', '粉色', '柔和'],
   },
   {
-    fileName: '浅灰-黑.png',
-    category: 'color-themes/light-black',
-    tags: ['浅灰', '黑色', '高级'],
-  },
-  {
-    fileName: '海盐.png',
-    category: 'color-themes/sea-salt',
+    fileName: 'sea-salt.png',
+    category: 'color-themes',
     tags: ['海盐', '蓝色', '清新'],
   },
   {
-    fileName: '燕麦.png',
-    category: 'color-themes/oat',
+    fileName: 'oat.png',
+    category: 'color-themes',
     tags: ['燕麦', '米色', '温暖'],
   },
   {
-    fileName: '黑-浅灰.png',
-    category: 'color-themes/dark-light-gray',
+    fileName: 'dark-light-gray.png',
+    category: 'color-themes',
     tags: ['黑色', '浅灰', '对比'],
   },
   {
-    fileName: '黑粉.jpg',
-    category: 'color-themes/dark-pink',
+    fileName: 'dark-pink.jpg',
+    category: 'color-themes',
     tags: ['黑色', '粉色', '时尚'],
   },
 ];
 
+const legacyFileNameMap: Record<string, string> = {
+  '赛博朋克1.png': 'cyberpunk-1.png',
+  '赛博朋克2.png': 'cyberpunk-2.png',
+  '抹茶.jpg': 'matcha.jpg',
+  '浅灰-灰.png': 'light-gray.png',
+  '浅灰-粉.jpg': 'light-pink.jpg',
+  '海盐.png': 'sea-salt.png',
+  '燕麦.png': 'oat.png',
+  '黑-浅灰.png': 'dark-light-gray.png',
+  '黑粉.jpg': 'dark-pink.jpg',
+};
+
+function resolveGalleryFileName(fileName: string) {
+  return legacyFileNameMap[fileName] ?? fileName;
+}
+
 export function getGalleryImageUrl(fileName: string): string {
-  const image = galleryImages.find(img => img.fileName === fileName);
-  if (!image) return `/picture/${fileName}`;
-  
+  const resolvedFileName = resolveGalleryFileName(fileName);
+  const image = galleryImages.find(img => img.fileName === resolvedFileName);
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) {
-      console.warn('VITE_SUPABASE_URL 未设置，使用本地图片');
-      return `/picture/${fileName}`;
+    if (image) {
+      return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${image.category}/${resolvedFileName}`;
     }
-    const storageUrl = `${supabaseUrl}/storage/v1/object/public/${GALLERY_BUCKET}/${image.category}/${fileName}`;
-    console.log(`图库图片 URL: ${fileName} -> ${storageUrl}`);
-    return storageUrl;
+    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${resolvedFileName}`;
   } catch (error) {
-    console.warn('获取 Storage URL 失败，使用本地图片:', error);
-    return `/picture/${fileName}`;
+    console.warn('获取 Storage URL 失败，返回 Supabase 默认地址:', error);
+    if (image) {
+      return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${image.category}/${resolvedFileName}`;
+    }
+    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${resolvedFileName}`;
   }
 }
 
 export function getGalleryImagesByCategory(category: string): GalleryImage[] {
   return galleryImages.filter(img => img.category.startsWith(category));
+}
+
+export function getManagedImageUrl(assetKey: string): string {
+  return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/managed/${assetKey}`;
+}
+
+export function getAestheticCoverUrl(aestheticId: string): string {
+  const aestheticMap: Record<string, string> = {
+    'wabi-sabi': 'aesthetics/wabi-sabi.jpg',
+    'minimalism': 'aesthetics/minimalism.jpg',
+    'cyberpunk': 'aesthetics/cyberpunk.jpg',
+    'neo-chinese': 'aesthetics/neo-chinese.jpg',
+    'pop-art': 'aesthetics/pop-art.jpg',
+    'art-deco': 'aesthetics/art-deco.jpg',
+  };
+
+  try {
+    const path = aestheticMap[aestheticId] || `aesthetics/${aestheticId}.jpg`;
+    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${path}`;
+  } catch {
+    const path = aestheticMap[aestheticId] || `aesthetics/${aestheticId}.jpg`;
+    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/${GALLERY_BUCKET}/${path}`;
+  }
 }

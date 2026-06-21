@@ -85,6 +85,50 @@ export async function signUpWithPassword(
   };
 }
 
+export async function signInWithEmailOtp(email: string) {
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  
+  if (error) {
+    throw new Error(mapSupabaseError(error, '发送验证码失败'));
+  }
+  
+  return {
+    success: true,
+    message: '验证码已发送到你的邮箱',
+  };
+}
+
+export async function verifyOtp(email: string, token: string) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  });
+  
+  if (error) {
+    throw new Error(mapSupabaseError(error, '验证码验证失败'));
+  }
+  
+  if (!data.session) {
+    throw new Error('验证成功但未获取到会话');
+  }
+  
+  return {
+    user: {
+      id: data.user.id,
+      email: data.user.email ?? '',
+      name: data.user.user_metadata?.name as string | undefined,
+      avatar: data.user.user_metadata?.avatar as string | undefined,
+    },
+    accessToken: data.session.access_token,
+  } as AuthSession;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) {
@@ -99,6 +143,18 @@ export async function resetPassword(email: string) {
   
   if (error) {
     throw new Error(mapSupabaseError(error, '发送重置邮件失败'));
+  }
+  
+  return true;
+}
+
+export async function updatePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  
+  if (error) {
+    throw new Error(mapSupabaseError(error, '重置密码失败'));
   }
   
   return true;

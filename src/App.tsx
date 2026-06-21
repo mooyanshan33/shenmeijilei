@@ -3,7 +3,7 @@ import { SplashScreen } from '@/sections/SplashScreen';
 import { BottomNavigation } from '@/sections/BottomNavigation';
 import { ExplorePage } from '@/sections/ExplorePage';
 import { AestheticDetail } from '@/sections/AestheticDetail';
-import { ContributionsPage } from '@/sections/ContributionsPage';
+import { Workshop } from '@/workshop';
 import { LogsPage } from '@/sections/LogsPage';
 import { ProfilePage } from '@/sections/ProfilePage';
 import { AuthCallback } from '@/sections/AuthCallback';
@@ -80,7 +80,7 @@ function App() {
       case 'explore':
         return <ExplorePage onSelectAesthetic={handleSelectAesthetic} />;
       case 'contributions':
-        return <ContributionsPage />;
+        return <Workshop />;
       case 'logs':
         return <LogsPage />;
       case 'profile':

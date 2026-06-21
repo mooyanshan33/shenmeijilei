@@ -9,6 +9,9 @@ const AVATAR_FILES = [
   'avatar-08.jpg',
 ] as const;
 
+const SUPABASE_PUBLIC_URL =
+  import.meta.env.VITE_SUPABASE_URL ?? 'https://tefbzxcdrlepzhgjfpdq.supabase.co';
+
 function hashSeed(seed: string) {
   // FNV-1a 32-bit
   let h = 0x811c9dc5;
@@ -21,7 +24,10 @@ function hashSeed(seed: string) {
 
 export function avatarUrlFromIndex(index: number) {
   const safe = ((index % AVATAR_FILES.length) + AVATAR_FILES.length) % AVATAR_FILES.length;
-  return `/avatars/defaults/${AVATAR_FILES[safe]}`;
+  try {
+    return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/gallery/avatars/defaults/${AVATAR_FILES[safe]}`;
+  } catch {}
+  return `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/gallery/avatars/defaults/${AVATAR_FILES[safe]}`;
 }
 
 export function avatarUrlFromSeed(seed: string) {

@@ -1,6 +1,6 @@
 import type { AestheticType, Contribution, AestheticLog, UserProfile, AestheticCategory, AestheticVideo } from '@/types';
 import { avatarUrlFromSeed } from '@/lib/avatars';
-import { getGalleryImageUrl } from '@/lib/gallery';
+import { getGalleryImageUrl, getAestheticCoverUrl, getManagedImageUrl } from '@/lib/gallery';
 
 export const aestheticTypes: AestheticType[] = [
   {
@@ -17,8 +17,8 @@ export const aestheticTypes: AestheticType[] = [
       '不对称的构图',
       '天然材料的使用'
     ],
-    coverImage: '/aesthetic-wabi-sabi.jpg',
-    gallery: ['/aesthetic-wabi-sabi.jpg'],
+    coverImage: getAestheticCoverUrl('wabi-sabi'),
+    gallery: [getAestheticCoverUrl('wabi-sabi')],
     relatedArtists: ['千利休', '柳宗悦']
   },
   {
@@ -35,8 +35,8 @@ export const aestheticTypes: AestheticType[] = [
       '功能性优先',
       '去除多余装饰'
     ],
-    coverImage: '/aesthetic-minimalism.jpg',
-    gallery: ['/aesthetic-minimalism.jpg'],
+    coverImage: getAestheticCoverUrl('minimalism'),
+    gallery: [getAestheticCoverUrl('minimalism')],
     relatedArtists: ['Donald Judd', 'Dan Flavin']
   },
   {
@@ -53,8 +53,8 @@ export const aestheticTypes: AestheticType[] = [
       '人机融合元素',
       '反乌托邦氛围'
     ],
-    coverImage: getGalleryImageUrl('赛博朋克1.png'),
-    gallery: [getGalleryImageUrl('赛博朋克1.png'), getGalleryImageUrl('赛博朋克2.png')],
+    coverImage: getGalleryImageUrl('cyberpunk-1.png'),
+    gallery: [getGalleryImageUrl('cyberpunk-1.png'), getGalleryImageUrl('cyberpunk-2.png')],
     relatedArtists: ['Syd Mead', 'Simon Stålenhag']
   },
   {
@@ -71,8 +71,8 @@ export const aestheticTypes: AestheticType[] = [
       '意境营造',
       '对称与平衡'
     ],
-    coverImage: '/aesthetic-neo-chinese.jpg',
-    gallery: ['/aesthetic-neo-chinese.jpg'],
+    coverImage: getAestheticCoverUrl('neo-chinese'),
+    gallery: [getAestheticCoverUrl('neo-chinese')],
     relatedArtists: ['贝聿铭', '马岩松']
   },
   {
@@ -89,8 +89,8 @@ export const aestheticTypes: AestheticType[] = [
       '漫画风格元素',
       '商业艺术手法'
     ],
-    coverImage: '/aesthetic-pop-art.jpg',
-    gallery: ['/aesthetic-pop-art.jpg'],
+    coverImage: getAestheticCoverUrl('pop-art'),
+    gallery: [getAestheticCoverUrl('pop-art')],
     relatedArtists: ['Andy Warhol', 'Roy Lichtenstein']
   },
   {
@@ -107,8 +107,8 @@ export const aestheticTypes: AestheticType[] = [
       '奢华材质的使用',
       '流线型设计'
     ],
-    coverImage: '/aesthetic-art-deco.jpg',
-    gallery: ['/aesthetic-art-deco.jpg'],
+    coverImage: getAestheticCoverUrl('art-deco'),
+    gallery: [getAestheticCoverUrl('art-deco')],
     relatedArtists: ['Erté', 'Tamara de Lempicka']
   }
 ];
@@ -119,7 +119,7 @@ export const contributions: Contribution[] = [
     userId: 'user2',
     userName: '城市漫步者',
     userAvatar: avatarUrlFromSeed('user2'),
-    imageUrl: getGalleryImageUrl('赛博朋克1.png'),
+    imageUrl: getGalleryImageUrl('cyberpunk-1.png'),
     caption: '雨夜霓虹，城市的另一种面孔',
     tags: ['赛博朋克', '城市', '夜景'],
     likes: 256,
@@ -132,7 +132,7 @@ export const contributions: Contribution[] = [
     userId: 'user2',
     userName: '城市漫步者',
     userAvatar: avatarUrlFromSeed('user2'),
-    imageUrl: getGalleryImageUrl('赛博朋克2.png'),
+    imageUrl: getGalleryImageUrl('cyberpunk-2.png'),
     caption: '霓虹灯下的未来都市，科技与废墟的交织',
     tags: ['赛博朋克', '未来', '建筑'],
     likes: 189,
@@ -145,7 +145,7 @@ export const contributions: Contribution[] = [
     userId: 'user1',
     userName: '美学探索者',
     userAvatar: avatarUrlFromSeed('user1'),
-    imageUrl: '/aesthetic-minimalism.jpg',
+    imageUrl: getAestheticCoverUrl('minimalism'),
     caption: '今日发现的极简建筑，光影与空间的完美对话',
     tags: ['极简主义', '建筑', '光影'],
     likes: 128,
@@ -158,7 +158,7 @@ export const contributions: Contribution[] = [
     userId: 'user3',
     userName: '禅意生活',
     userAvatar: avatarUrlFromSeed('user3'),
-    imageUrl: '/aesthetic-wabi-sabi.jpg',
+    imageUrl: getAestheticCoverUrl('wabi-sabi'),
     caption: '不完美中的完美，岁月的痕迹',
     tags: ['侘寂', '禅意', '生活'],
     likes: 89,
@@ -171,7 +171,7 @@ export const contributions: Contribution[] = [
     userId: 'user4',
     userName: '东方美学',
     userAvatar: avatarUrlFromSeed('user4'),
-    imageUrl: '/aesthetic-neo-chinese.jpg',
+    imageUrl: getAestheticCoverUrl('neo-chinese'),
     caption: '新中式空间的静谧之美',
     tags: ['新中式', '室内设计', '东方'],
     likes: 167,
@@ -187,7 +187,7 @@ export const aestheticLogs: AestheticLog[] = [
     userId: 'user2',
     date: '2024-01-15',
     content: '赛博朋克的霓虹灯光，科技与颓废的交织，让人既向往又警惕。这种美学风格不仅仅是视觉的享受，更是对未来的思考。',
-    imageUrl: getGalleryImageUrl('赛博朋克1.png'),
+    imageUrl: getGalleryImageUrl('cyberpunk-1.png'),
     tags: ['赛博朋克', '观察', '未来'],
     createdAt: '2024-01-15T21:30:00Z'
   },
@@ -231,8 +231,8 @@ export const aestheticCategories: AestheticCategory[] = [
 export const aestheticVideos: AestheticVideo[] = [
   {
     id: '1',
-    title: '什么是“核类美学”？从 Weirdcore 到 Dreamcore 的视觉奇观',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+    title: '什么是"核类美学"？从 Weirdcore 到 Dreamcore 的视觉奇观',
+    thumbnail: getManagedImageUrl('mockData-001'),
     videoUrl: '#',
     duration: '12:45',
     views: '12.5万',
@@ -242,7 +242,7 @@ export const aestheticVideos: AestheticVideo[] = [
   {
     id: '2',
     title: '海洋学术美学：深海、神话与维多利亚时代的科学探索',
-    thumbnail: 'https://images.unsplash.com/photo-1551244072-5d12893278ab?w=800&auto=format&fit=crop&q=60',
+    thumbnail: getManagedImageUrl('mockData-002'),
     videoUrl: '#',
     duration: '08:20',
     views: '8.3万',
@@ -252,7 +252,7 @@ export const aestheticVideos: AestheticVideo[] = [
   {
     id: '3',
     title: '互联网美学史：从 Windows 95 到 Vaporwave 的视觉演变',
-    thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=60',
+    thumbnail: getManagedImageUrl('mockData-003'),
     videoUrl: '#',
     duration: '15:10',
     views: '20.1万',

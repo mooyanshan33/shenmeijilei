@@ -1,15 +1,28 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { getCurrentUser, resetPassword, signInWithPassword, signOut, signUpWithPassword } from '@/supabase/services/auth';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { EnhancedAuthModal } from '@/components/auth';
+import { SettingsPage } from './SettingsPage';
+import { getCurrentUser, signOut } from '@/supabase/services/auth';
 import { getCurrentProfile, updateProfile } from '@/supabase/services/profile';
 import { listContributions } from '@/supabase/services/contribution';
 import { uploadAvatarImage } from '@/supabase/services/storage';
 import { getOrCreateLocalAvatar, avatarUrlFromSeed } from '@/lib/avatars';
 import type { AestheticType, Contribution, UserProfile, ThemeType } from '@/types';
+import { 
+  Bookmark, 
+  Palette, 
+  History, 
+  Settings, 
+  LogOut, 
+  ChevronRight, 
+  LogIn,
+  User,
+  Eye
+} from 'lucide-react';
 
 interface ProfilePageProps {
   theme: ThemeType;
@@ -17,7 +30,7 @@ interface ProfilePageProps {
   onSelectAesthetic: (aesthetic: AestheticType) => void;
 }
 
-type ProfileView = 'main' | 'favorites' | 'myContributions' | 'history' | 'settings';
+type ProfileView = 'main' | 'favorites' | 'myContributions' | 'history' | 'settingsPage';
 
 type StoredAestheticItem = {
   aesthetic: AestheticType;
@@ -25,13 +38,11 @@ type StoredAestheticItem = {
 };
 
 export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: ProfilePageProps) {
-  const [notifications, setNotifications] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<ProfileView>('main');
   const [userEmail, setUserEmail] = useState<string>('');
-  const [fontScale, setFontScale] = useState<'sm' | 'md' | 'lg'>('md');
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
@@ -39,16 +50,6 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
   const [editStatus, setEditStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [avatarUploadStatus, setAvatarUploadStatus] = useState<'idle' | 'uploading' | 'error'>('idle');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authPassword2, setAuthPassword2] = useState('');
-  const [authName, setAuthName] = useState('');
-  const [authStatus, setAuthStatus] = useState<'idle' | 'submitting' | 'error' | 'signedUpNeedsConfirm'>('idle');
-  const [authError, setAuthError] = useState('');
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [favorites, setFavorites] = useState<StoredAestheticItem[]>([]);
   const [history, setHistory] = useState<StoredAestheticItem[]>([]);
   const [myContributions, setMyContributions] = useState<Contribution[]>([]);
@@ -70,7 +71,7 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
             id: 'guest',
             name: '访客用户',
             avatar: getOrCreateLocalAvatar(),
-            bio: '登录后查看更多内容',
+            bio: '登录后解锁更多内容',
             logCount: 0,
             contributionCount: 0,
             favoriteCount: 0,
@@ -84,7 +85,7 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
           id: 'guest',
           name: '访客用户',
           avatar: getOrCreateLocalAvatar(),
-          bio: '登录后查看更多内容',
+          bio: '登录后解锁更多内容',
           logCount: 0,
           contributionCount: 0,
           favoriteCount: 0,
@@ -115,24 +116,15 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
 
   useEffect(() => {
     loadStoredLists();
+    // Load font scale from localStorage to ensure consistency
     try {
       const raw = localStorage.getItem('yy_font_scale');
-      const v = raw === 'sm' || raw === 'md' || raw === 'lg' ? raw : 'md';
-      setFontScale(v);
-    } catch {
-      setFontScale('md');
-    }
-  }, []);
-
-  useEffect(() => {
-    const scale = fontScale === 'sm' ? 0.95 : fontScale === 'lg' ? 1.05 : 1;
-    document.documentElement.style.fontSize = `${Math.round(scale * 100)}%`;
-    try {
-      localStorage.setItem('yy_font_scale', fontScale);
+      const scale = raw === 'sm' ? 0.95 : raw === 'lg' ? 1.05 : 1;
+      document.documentElement.style.fontSize = `${Math.round(scale * 100)}%`;
     } catch {
       void 0;
     }
-  }, [fontScale]);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -143,48 +135,13 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
     }
   };
 
-  const openAuth = useCallback(
-    (mode: 'signin' | 'signup' = 'signin') => {
-      setAuthMode(mode);
-      setAuthEmail(userEmail || '');
-      setAuthPassword('');
-      setAuthPassword2('');
-      setAuthName('');
-      setAuthStatus('idle');
-      setAuthError('');
-      setIsAuthOpen(true);
-    },
-    [userEmail]
-  );
+  const openAuth = useCallback(() => {
+    setIsAuthOpen(true);
+  }, []);
 
-  const submitAuth = useCallback(async () => {
-    const email = authEmail.trim();
-    const password = authPassword;
-    if (!email || !password) return;
-    if (authMode === 'signup' && password !== authPassword2) {
-      setAuthStatus('error');
-      setAuthError('两次输入的密码不一致');
-      return;
-    }
-    setAuthStatus('submitting');
-    setAuthError('');
-    try {
-      if (authMode === 'signin') {
-        await signInWithPassword(email, password);
-        window.location.reload();
-        return;
-      }
-      const res = await signUpWithPassword(email, password, authName.trim() || undefined);
-      if (res.needsConfirmation) {
-        setAuthStatus('signedUpNeedsConfirm');
-        return;
-      }
-      window.location.reload();
-    } catch (e) {
-      setAuthStatus('error');
-      setAuthError(e instanceof Error ? e.message : '操作失败');
-    }
-  }, [authEmail, authPassword, authMode, authPassword2, authName]);
+  const handleAuthSuccess = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   const favoriteCount = favorites.length;
   const historyCount = history.length;
@@ -208,15 +165,15 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
     return [
       {
         id: 'signin',
-        icon: 'login',
+        icon: <LogIn className="w-5 h-5 text-zinc-700" />,
         label: '登录 / 注册',
         count: undefined,
-        action: () => openAuth('signin'),
+        action: openAuth,
         hidden: isLoggedIn,
       },
       {
         id: 'favorites',
-        icon: 'bookmark',
+        icon: <Bookmark className="w-5 h-5 text-zinc-700" />,
         label: '我的收藏',
         count: favoriteCount,
         action: () => {
@@ -226,14 +183,14 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
       },
       {
         id: 'contributions',
-        icon: 'palette',
+        icon: <Palette className="w-5 h-5 text-zinc-700" />,
         label: '我的贡献',
         count: profile?.contributionCount ?? 0,
         action: openMyContributions,
       },
       {
         id: 'history',
-        icon: 'history',
+        icon: <History className="w-5 h-5 text-zinc-700" />,
         label: '浏览记录',
         count: historyCount,
         action: () => {
@@ -243,17 +200,10 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
       },
       {
         id: 'settings',
-        icon: 'settings',
-        label: '更多设置',
+        icon: <Settings className="w-5 h-5 text-zinc-700" />,
+        label: '设置',
         count: undefined,
-        action: () => setView('settings'),
-      },
-      {
-        id: 'signout',
-        icon: 'logout',
-        label: '退出登录',
-        action: handleSignOut,
-        hidden: !isLoggedIn,
+        action: () => setView('settingsPage'),
       },
     ];
   }, [favoriteCount, historyCount, isLoggedIn, openAuth, profile?.contributionCount]);
@@ -274,24 +224,6 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
       setHistory([]);
     } catch {
       void 0;
-    }
-  };
-
-  const openResetPassword = () => {
-    setResetEmail(userEmail);
-    setResetStatus('idle');
-    setIsResetDialogOpen(true);
-  };
-
-  const sendResetPassword = async () => {
-    const email = resetEmail.trim();
-    if (!email) return;
-    setResetStatus('sending');
-    try {
-      await resetPassword(email);
-      setResetStatus('sent');
-    } catch {
-      setResetStatus('error');
     }
   };
 
@@ -340,8 +272,8 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
 
   if (isLoading) {
     return (
-      <div className="min-h-full pb-24 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-full bg-[#fafafa] dark:bg-zinc-950 pb-24 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-400 rounded-full animate-spin" />
       </div>
     );
   }
@@ -357,27 +289,27 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
             : '设置';
 
     return (
-      <div className="min-h-full pb-24">
-        <header className="sticky top-0 z-20 glass-panel px-4 py-4">
+      <div className="min-h-full bg-[#fafafa] dark:bg-zinc-950 pb-24">
+        <header className="sticky top-0 z-20 bg-[#fafafa]/90 dark:bg-zinc-950/90 backdrop-blur-sm px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setView('main')}
-              className="w-10 h-10 rounded-full glass-panel btn-press flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
               aria-label="返回"
             >
-              <span className="material-symbols text-foreground">arrow_back</span>
+              <ChevronRight className="w-5 h-5 text-zinc-600 dark:text-zinc-400 rotate-180" />
             </button>
-            <h1 className="font-serif text-2xl text-foreground">{title}</h1>
+            <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{title}</h1>
           </div>
         </header>
 
         {view === 'favorites' && (
-          <div className="px-4 pt-6 space-y-4">
+          <div className="px-6 pt-6 space-y-4">
             {favorites.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <span className="material-symbols text-5xl mb-4">bookmark</span>
+              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                <Bookmark className="w-12 h-12 mb-4 text-zinc-300" />
                 <p className="text-base">还没有收藏</p>
-                <p className="text-sm mt-1">在风格详情页点击“收藏”即可加入</p>
+                <p className="text-sm mt-1 text-zinc-400">在风格详情页点击收藏即可加入</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -385,12 +317,12 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                   .slice()
                   .sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0))
                   .map((item) => (
-                    <div key={item.aesthetic.id} className="glass-card overflow-hidden">
+                    <div key={item.aesthetic.id} className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
                       <button
-                        className="w-full text-left flex items-center gap-3 p-3"
+                        className="w-full text-left flex items-center gap-4 p-4"
                         onClick={() => onSelectAesthetic(item.aesthetic)}
                       >
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-secondary flex-shrink-0">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
                           <img
                             src={item.aesthetic.coverImage}
                             alt={item.aesthetic.name}
@@ -398,18 +330,19 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-serif text-base text-foreground truncate">
+                          <p className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
                             {item.aesthetic.name}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-sm text-zinc-500 truncate mt-0.5">
                             {item.aesthetic.nameEn}
                           </p>
                         </div>
+                        <ChevronRight className="w-5 h-5 text-zinc-400 flex-shrink-0" />
                       </button>
-                      <div className="px-3 pb-3">
+                      <div className="px-4 pb-4">
                         <Button
                           variant="outline"
-                          className="w-full rounded-xl btn-press"
+                          className="w-full rounded-xl border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
                           onClick={() => removeFavorite(item.aesthetic.id)}
                         >
                           取消收藏
@@ -423,11 +356,11 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
         )}
 
         {view === 'history' && (
-          <div className="px-4 pt-6 space-y-4">
+          <div className="px-6 pt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">共 {history.length} 条</p>
+              <p className="text-sm text-zinc-500">共 {history.length} 条</p>
               <button
-                className="text-sm text-foreground/70 hover:text-foreground"
+                className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
                 onClick={clearHistory}
                 disabled={history.length === 0}
               >
@@ -435,10 +368,10 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
               </button>
             </div>
             {history.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <span className="material-symbols text-5xl mb-4">history</span>
+              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                <History className="w-12 h-12 mb-4 text-zinc-300" />
                 <p className="text-base">还没有浏览记录</p>
-                <p className="text-sm mt-1">去探索页看看你喜欢的风格吧</p>
+                <p className="text-sm mt-1 text-zinc-400">去探索页看看你喜欢的风格吧</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -448,10 +381,10 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                   .map((item) => (
                     <button
                       key={`${item.aesthetic.id}-${item.ts}`}
-                      className="w-full glass-card p-3 flex items-center gap-3 btn-press text-left"
+                      className="w-full bg-white dark:bg-zinc-900 p-4 flex items-center gap-4 text-left rounded-2xl"
                       onClick={() => onSelectAesthetic(item.aesthetic)}
                     >
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden bg-secondary flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
                         <img
                           src={item.aesthetic.coverImage}
                           alt={item.aesthetic.name}
@@ -459,10 +392,10 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{item.aesthetic.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{item.aesthetic.nameEn}</p>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{item.aesthetic.name}</p>
+                        <p className="text-xs text-zinc-500 truncate mt-0.5">{item.aesthetic.nameEn}</p>
                       </div>
-                      <span className="material-symbols text-muted-foreground">chevron_right</span>
+                      <ChevronRight className="w-5 h-5 text-zinc-400 flex-shrink-0" />
                     </button>
                   ))}
               </div>
@@ -471,41 +404,28 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
         )}
 
         {view === 'myContributions' && (
-          <div className="px-4 pt-6">
+          <div className="px-6 pt-6">
             {!isLoggedIn || !profile || profile.id === 'guest' ? (
-              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <span className="material-symbols text-5xl mb-4">palette</span>
+              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                <Palette className="w-12 h-12 mb-4 text-zinc-300" />
                 <p className="text-base">登录后可查看你的贡献</p>
               </div>
             ) : myContribLoading ? (
               <div className="min-h-full pb-24 flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-400 rounded-full animate-spin" />
               </div>
             ) : myContributions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <span className="material-symbols text-5xl mb-4">photo_library</span>
+              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                <Palette className="w-12 h-12 mb-4 text-zinc-300" />
                 <p className="text-base">你还没有发布过分享</p>
-                <p className="text-sm mt-1">去工坊发布你的第一条内容</p>
+                <p className="text-sm mt-1 text-zinc-400">去工坊发布你的第一条内容</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {myContributions.map((c) => (
-                  <div key={c.id} className="glass-card overflow-hidden">
-                    <div className="relative aspect-[4/3] overflow-hidden">
+                  <div key={c.id} className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden aspect-square">
+                    <div className="relative w-full h-full">
                       <img src={c.imageUrl} alt={c.caption} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-foreground">{c.caption}</p>
-                      <div className="mt-3 flex items-center gap-4 text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols text-base">favorite</span>
-                          <span className="text-xs">{c.likes}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols text-base">chat_bubble</span>
-                          <span className="text-xs">{c.comments}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -514,247 +434,162 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
           </div>
         )}
 
-        {view === 'settings' && (
-          <div className="px-4 pt-6 space-y-2">
-            <div className="glass-card p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="material-symbols text-muted-foreground">notifications</span>
-                <span className="text-foreground">消息通知</span>
-              </div>
-              <Switch
-                checked={notifications}
-                onCheckedChange={setNotifications}
-                className="data-[state=checked]:bg-foreground"
-              />
-            </div>
-
-            <div className="glass-card p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="material-symbols text-muted-foreground">
-                  {theme === 'dark' ? 'dark_mode' : 'light_mode'}
-                </span>
-                <span className="text-foreground">深色模式</span>
-              </div>
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={(checked) =>
-                  onThemeChange(checked ? 'dark' : 'light')
-                }
-                className="data-[state=checked]:bg-foreground"
-              />
-            </div>
-
-            <div className="glass-card p-4">
-              <div className="flex items-center gap-4 mb-3">
-                <span className="material-symbols text-muted-foreground">text_fields</span>
-                <span className="text-foreground">字体大小</span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={fontScale === 'sm' ? 'default' : 'outline'}
-                  className="flex-1 rounded-xl btn-press"
-                  onClick={() => setFontScale('sm')}
-                >
-                  小
-                </Button>
-                <Button
-                  variant={fontScale === 'md' ? 'default' : 'outline'}
-                  className="flex-1 rounded-xl btn-press"
-                  onClick={() => setFontScale('md')}
-                >
-                  标准
-                </Button>
-                <Button
-                  variant={fontScale === 'lg' ? 'default' : 'outline'}
-                  className="flex-1 rounded-xl btn-press"
-                  onClick={() => setFontScale('lg')}
-                >
-                  大
-                </Button>
-              </div>
-            </div>
-
-            <div className="glass-card p-4">
-              <div className="flex items-center gap-4 mb-3">
-                <span className="material-symbols text-muted-foreground">verified_user</span>
-                <span className="text-foreground">账号安全</span>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full rounded-xl btn-press"
-                disabled={!isLoggedIn}
-                onClick={openResetPassword}
-              >
-                {isLoggedIn ? '重置密码' : '登录后可用'}
-              </Button>
-            </div>
-
-            {isLoggedIn && (
-              <div className="glass-card p-4">
-                <Button
-                  variant="outline"
-                  className="w-full rounded-xl btn-press"
-                  onClick={handleSignOut}
-                >
-                  退出登录
-                </Button>
-              </div>
-            )}
-          </div>
+        {view === 'settingsPage' && (
+          <SettingsPage
+            theme={theme}
+            onThemeChange={onThemeChange}
+          />
         )}
-
-        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-          <DialogContent className="glass-card border-0 max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="font-serif text-xl">重置密码</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <Input
-                type="email"
-                placeholder="邮箱"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                className="bg-secondary/50 border-0 rounded-xl"
-              />
-              <Button
-                onClick={sendResetPassword}
-                disabled={resetStatus === 'sending' || !resetEmail.trim()}
-                className="w-full btn-press disabled:opacity-50"
-              >
-                {resetStatus === 'sending' ? '发送中...' : '发送重置邮件'}
-              </Button>
-              {resetStatus === 'sent' && (
-                <div className="text-sm text-muted-foreground">
-                  已发送重置邮件，请前往邮箱完成操作。
-                </div>
-              )}
-              {resetStatus === 'error' && (
-                <div className="text-sm text-muted-foreground">
-                  发送失败，请稍后重试。
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full pb-24">
-      {/* Header */}
-      <header className="px-4 py-6">
-        <h1 className="font-serif text-2xl text-foreground">个人中心</h1>
-      </header>
+    <div className="min-h-full bg-[#fafafa] dark:bg-zinc-950 pb-24">
+      {/* Page Title */}
+      <div className="px-6 pt-10 pb-6">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Personal Profile</h1>
+      </div>
 
-      {/* Profile Card */}
-      <div className="px-4 mb-6">
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <button
-                onClick={openEditProfile}
-                className="relative w-20 h-20 rounded-full btn-press"
-                aria-label="编辑个人信息"
-              >
-                <div className="absolute inset-0 rounded-full overflow-hidden bg-secondary">
-                  <img
-                    src={profile?.avatar}
-                    alt={profile?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute inset-0 rounded-full bg-black/10 opacity-0 hover:opacity-100 transition-opacity" />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-neon flex items-center justify-center">
-                  <span className="material-symbols text-sm text-white">edit</span>
-                </div>
-              </button>
-            </div>
-            <div className="flex-1">
-              <h2 className="font-serif text-xl text-foreground mb-1">
-                {profile?.name}
-              </h2>
-              <p className="text-sm text-muted-foreground">{profile?.bio}</p>
-            </div>
-          </div>
+      {/* Profile Header */}
+      <div className="px-6">
+        {/* Top Section - Avatar + Stats */}
+        <div className="flex items-start gap-6">
+          <Avatar className="w-20 h-20 border-2 border-zinc-100 dark:border-zinc-800">
+            <AvatarImage src={profile?.avatar} alt={profile?.name} className="object-cover" />
+            <AvatarFallback className="bg-zinc-200 dark:bg-zinc-700">
+              <User className="w-8 h-8 text-zinc-400" />
+            </AvatarFallback>
+          </Avatar>
 
-          {/* Stats */}
-          <div className="flex justify-around mt-6 pt-6 border-t border-border">
+          <div className="flex-1 flex items-center justify-around pt-1">
             <div className="text-center">
-              <p className="font-serif text-2xl text-foreground">
+              <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                {profile?.contributionCount ?? 0}
+              </p>
+              <p className="text-xs text-zinc-500 mt-0.5">Posts</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                 {historyCount}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">浏览</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Views</p>
             </div>
             <div className="text-center">
-              <p className="font-serif text-2xl text-foreground">
-                {profile?.contributionCount}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">贡献</p>
-            </div>
-            <div className="text-center">
-              <p className="font-serif text-2xl text-foreground">
+              <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
                 {favoriteCount}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">收藏</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Collections</p>
             </div>
           </div>
         </div>
+
+        {/* User Info */}
+        <div className="mt-4">
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            {profile?.name}
+          </h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            @{isLoggedIn ? (profile?.name ?? 'user').toLowerCase().replace(/\s+/g, '') : 'guest'}
+          </p>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
+            {profile?.bio}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-5">
+          {isLoggedIn ? (
+            <>
+              <Button
+                className="flex-1 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-white rounded-xl h-11"
+                onClick={openEditProfile}
+              >
+                Edit Profile
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border-0 rounded-xl h-11"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Profile
+              </Button>
+            </>
+          ) : (
+            <Button
+              className="flex-1 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-white rounded-xl h-11"
+              onClick={openAuth}
+            >
+              Get Started
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="px-4 space-y-2">
-        {menuItems
-          .filter((item) => !item.hidden)
-          .map((item) => (
-            <button
-              key={item.id}
-              onClick={item.action}
-              className="w-full glass-card p-4 flex items-center gap-4 btn-press"
-            >
-              <span className="material-symbols text-muted-foreground">
-                {item.icon}
-              </span>
-              <span className="flex-1 text-left text-foreground">{item.label}</span>
-              {item.count !== undefined && (
-                <span className="text-sm text-muted-foreground">{item.count}</span>
-              )}
-              <span className="material-symbols text-muted-foreground">
-                chevron_right
-              </span>
-            </button>
-          ))}
+      {/* Menu List */}
+      <div className="px-6 mt-8">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl divide-y divide-zinc-100 dark:divide-zinc-800 overflow-hidden">
+          {menuItems
+            .filter((item) => !item.hidden)
+            .map((item) => (
+              <button
+                key={item.id}
+                onClick={item.action}
+                className="w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              >
+                <div className="flex items-center gap-4">
+                  {item.icon}
+                  <span className="text-left text-zinc-900 dark:text-zinc-100 font-medium">
+                    {item.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {item.count !== undefined && (
+                    <span className="text-sm text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full">
+                      {item.count}
+                    </span>
+                  )}
+                  <ChevronRight className="w-5 h-5 text-zinc-400" />
+                </div>
+              </button>
+            ))}
+        </div>
+
+        {/* Sign Out Button */}
+        {isLoggedIn && (
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-3 mt-4 px-5 py-4 bg-white dark:bg-zinc-900 rounded-2xl text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">退出登录</span>
+          </button>
+        )}
       </div>
 
       <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-        <DialogContent className="glass-card border-0 max-w-sm">
+        <DialogContent className="bg-white dark:bg-zinc-900 border-0 max-w-sm rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">编辑个人信息</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-zinc-100">编辑个人信息</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            {!isLoggedIn && (
-              <div className="text-sm text-muted-foreground">
-                当前为访客模式，登录后可保存修改。
-              </div>
-            )}
+          <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">昵称</label>
+              <label className="text-sm text-zinc-500 mb-2 block">昵称</label>
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="bg-secondary/50 border-0 rounded-xl"
+                className="bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-xl"
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">头像</label>
+              <label className="text-sm text-zinc-500 mb-2 block">头像</label>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-grayWhite-100 flex items-center justify-center flex-shrink-0">
-                  {editAvatar ? (
-                    <img src={editAvatar} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="material-symbols text-muted-foreground">person</span>
-                  )}
-                </div>
+                <Avatar className="w-12 h-12 border border-zinc-200 dark:border-zinc-700">
+                  <AvatarImage src={editAvatar} className="object-cover" />
+                  <AvatarFallback className="bg-zinc-200 dark:bg-zinc-700">
+                    <User className="w-5 h-5 text-zinc-400" />
+                  </AvatarFallback>
+                </Avatar>
                 <input
                   type="file"
                   accept="image/*"
@@ -769,59 +604,44 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
                 />
                 <label
                   htmlFor="yy-avatar-file"
-                  className={
-                    "h-10 px-4 inline-flex items-center justify-center rounded-xl bg-grayWhite-white text-[#1f1f1f] hover:bg-grayWhite-50 active:bg-grayWhite-100 transition-colors duration-220 ease-kimi " +
-                    (!isLoggedIn || avatarUploadStatus === 'uploading'
-                      ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                      : 'cursor-pointer')
-                  }
+                  className="h-10 px-4 inline-flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 cursor-pointer transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {avatarUploadStatus === 'uploading' ? '上传中...' : '从相册选择'}
+                  {avatarUploadStatus === 'uploading' ? '上传中...' : '选择图片'}
                 </label>
-                <button
-                  type="button"
-                  className={
-                    "h-10 px-4 inline-flex items-center justify-center rounded-xl bg-grayWhite-white text-[#1f1f1f] hover:bg-grayWhite-50 active:bg-grayWhite-100 transition-colors duration-220 ease-kimi " +
-                    (!editAvatar || avatarUploadStatus === 'uploading'
-                      ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                      : 'cursor-pointer')
-                  }
-                  onClick={() => setEditAvatar('')}
-                  disabled={!editAvatar || avatarUploadStatus === 'uploading'}
-                >
-                  移除
-                </button>
-                <span className="text-xs text-muted-foreground">
-                  {avatarUploadStatus === 'error'
-                    ? '上传失败'
-                    : editAvatar
-                      ? '已选择'
-                      : '未选择'}
-                </span>
+                {editAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => setEditAvatar('')}
+                    disabled={avatarUploadStatus === 'uploading'}
+                    className="h-10 px-4 inline-flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 cursor-pointer transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    移除
+                  </button>
+                )}
               </div>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">简介</label>
+              <label className="text-sm text-zinc-500 mb-2 block">简介</label>
               <Textarea
                 value={editBio}
                 onChange={(e) => setEditBio(e.target.value)}
-                className="bg-secondary/50 border-0 rounded-xl resize-none"
+                className="bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-xl resize-none"
                 rows={3}
               />
             </div>
             {editStatus === 'error' && (
-              <div className="text-sm text-muted-foreground">保存失败，请稍后重试。</div>
+              <div className="text-sm text-red-500">保存失败，请稍后重试。</div>
             )}
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl btn-press"
+                className="flex-1 rounded-xl border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
                 onClick={() => setIsEditProfileOpen(false)}
               >
                 取消
               </Button>
               <Button
-                className="flex-1 btn-press rounded-xl disabled:opacity-50"
+                className="flex-1 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-white rounded-xl disabled:opacity-50"
                 onClick={saveProfile}
                 disabled={!isLoggedIn || editStatus === 'saving' || avatarUploadStatus === 'uploading' || !editName.trim()}
               >
@@ -832,152 +652,15 @@ export function ProfilePage({ theme, onThemeChange, onSelectAesthetic }: Profile
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <EnhancedAuthModal
         open={isAuthOpen}
-        onOpenChange={(v) => {
-          setIsAuthOpen(v);
-          if (!v) {
-            setAuthStatus('idle');
-            setAuthError('');
-          }
-        }}
-      >
-        <DialogContent className="glass-card border-0 max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">
-              {authMode === 'signin' ? '登录' : '注册'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-grayWhite-50 p-1">
-              <button
-                type="button"
-                className={`h-10 rounded-xl text-sm transition-colors duration-220 ease-kimi ${
-                  authMode === 'signin' ? 'bg-grayWhite-white text-[#1f1f1f]' : 'text-muted-foreground'
-                }`}
-                onClick={() => {
-                  setAuthMode('signin');
-                  setAuthStatus('idle');
-                  setAuthError('');
-                }}
-              >
-                登录
-              </button>
-              <button
-                type="button"
-                className={`h-10 rounded-xl text-sm transition-colors duration-220 ease-kimi ${
-                  authMode === 'signup' ? 'bg-grayWhite-white text-[#1f1f1f]' : 'text-muted-foreground'
-                }`}
-                onClick={() => {
-                  setAuthMode('signup');
-                  setAuthStatus('idle');
-                  setAuthError('');
-                }}
-              >
-                注册
-              </button>
-            </div>
-
-            {authStatus === 'signedUpNeedsConfirm' ? (
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  已提交注册，请前往邮箱完成验证后再登录。
-                </div>
-                <Button
-                  className="w-full bg-[#535353] text-[#B9B9B9] hover:bg-[#535353] btn-press rounded-xl"
-                  onClick={() => {
-                    setAuthMode('signin');
-                    setAuthStatus('idle');
-                    setAuthError('');
-                  }}
-                >
-                  返回登录
-                </Button>
-              </div>
-            ) : (
-              <form
-                className="space-y-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void submitAuth();
-                }}
-              >
-                {authMode === 'signup' && (
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">昵称（可选）</label>
-                    <Input
-                      value={authName}
-                      onChange={(e) => setAuthName(e.target.value)}
-                      className="bg-secondary/50 border-0 rounded-xl"
-                      autoComplete="nickname"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">邮箱</label>
-                  <Input
-                    type="email"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    className="bg-secondary/50 border-0 rounded-xl"
-                    autoComplete="email"
-                    inputMode="email"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">密码</label>
-                  <Input
-                    type="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    className="bg-secondary/50 border-0 rounded-xl"
-                    autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'}
-                  />
-                </div>
-                {authMode === 'signup' && (
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">确认密码</label>
-                    <Input
-                      type="password"
-                      value={authPassword2}
-                      onChange={(e) => setAuthPassword2(e.target.value)}
-                      className="bg-secondary/50 border-0 rounded-xl"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                )}
-
-                {authStatus === 'error' && (
-                  <div className="text-sm text-muted-foreground">{authError || '操作失败，请重试。'}</div>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#535353] text-[#B9B9B9] hover:bg-[#535353] btn-press rounded-xl disabled:opacity-50"
-                  disabled={
-                    authStatus === 'submitting' ||
-                    !authEmail.trim() ||
-                    !authPassword ||
-                    (authMode === 'signup' && !authPassword2)
-                  }
-                >
-                  {authStatus === 'submitting'
-                    ? authMode === 'signin'
-                      ? '登录中...'
-                      : '注册中...'
-                    : authMode === 'signin'
-                      ? '登录'
-                      : '注册'}
-                </Button>
-              </form>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setIsAuthOpen}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* Version */}
-      <div className="text-center mt-8 pb-8">
-        <p className="text-xs text-muted-foreground">审美积累 v1.1.0</p>
+      <div className="text-center mt-10 pb-8">
+        <p className="text-xs text-zinc-400">审美积累 v1.1.0</p>
       </div>
     </div>
   );
